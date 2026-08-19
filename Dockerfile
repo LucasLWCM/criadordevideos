@@ -34,9 +34,9 @@ RUN npx remotion browser ensure
 # Código-fonte
 COPY src ./src
 
-# Server e assets commitados (fontes + avatar placeholder)
+# Server e avatar commitado
 COPY server.js ./
-COPY assets/fontes ./assets/fontes
+COPY assets/avatar.png ./assets/
 
 # Garante que pastas de volume existam
 RUN mkdir -p assets/imagens assets/musica output
