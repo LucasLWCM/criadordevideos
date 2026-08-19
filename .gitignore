@@ -1,0 +1,7 @@
+node_modules/
+dist/
+output/
+assets/imagens/
+assets/musica/
+.env
+*.mp4
