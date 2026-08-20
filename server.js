@@ -14,6 +14,7 @@ const execFileAsync = promisify(execFile);
 
 const app = express();
 app.use(express.json());
+app.use('/output', express.static(path.join(__dirname, 'output')));
 
 // Fila com concorrência 1 — apenas 1 render por vez
 const renderQueue = new PQueue({ concurrency: 1 });

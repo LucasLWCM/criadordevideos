@@ -1,0 +1,177 @@
+{
+  "name": "Motor de Vídeo - Filosofia",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300],
+      "id": "aaaa0001-0000-0000-0000-000000000001",
+      "name": "Todo dia às 9h"
+    },
+    {
+      "parameters": {
+        "operation": "getRows",
+        "documentId": {
+          "__rl": true,
+          "value": "1FAf0QuK6cTEu13L6syzJsXzx-GQVWleeWoV9-x5Gl8s",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [220, 300],
+      "id": "aaaa0002-0000-0000-0000-000000000002",
+      "name": "Buscar Frases",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SUBSTITUA_PELO_ID_DA_CREDENCIAL",
+          "name": "Google Sheets - Filosofia"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().filter(r => String(r.json.usado).toUpperCase() !== 'TRUE');\nif (rows.length === 0) throw new Error('Nenhuma frase disponível — todas já foram usadas');\nconst idx = Math.floor(Math.random() * rows.length);\nconst row = rows[idx];\nreturn [{ json: { ...row.json, _rowIndex: row.json.row_number } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300],
+      "id": "aaaa0003-0000-0000-0000-000000000003",
+      "name": "Sortear Frase"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst variantes = ['A', 'B'];\nconst variante = (item.variante && ['A','B'].includes(item.variante))\n  ? item.variante\n  : variantes[Math.floor(Math.random() * 2)];\n\nconst caption = `\"${item.frase}\"\\n— ${item.autor}\\n\\n#filosofia #estoicismo #sabedoria #autoconhecimento #rafabarbosapsicologia`;\n\nreturn [{\n  json: {\n    props: {\n      frase: item.frase,\n      autor: item.autor,\n      imagem: `imagens/${item.imagem}`,\n      musica: `musica/${item.musica}`,\n      duracao: 8,\n      variante,\n      posicao_frase: 'centro',\n      arroba: 'rafabarbosa.filosofia',\n      avatar: 'avatar.png',\n      tema: item.tema || 'filosofia',\n    },\n    caption,\n    _rowIndex: item._rowIndex,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300],
+      "id": "aaaa0004-0000-0000-0000-000000000004",
+      "name": "Montar Props"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://criadordevideos:3001/gerar-video",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify($json.props) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 300],
+      "id": "aaaa0005-0000-0000-0000-000000000005",
+      "name": "Gerar Vídeo"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resposta = $input.first().json;\nif (resposta.status !== 'ok') throw new Error('Erro no render: ' + JSON.stringify(resposta));\n\nconst filename = resposta.arquivo.split('/').pop();\n// IMPORTANTE: substitua SEU_DOMINIO pelo domínio do serviço no EasyPanel\nconst VIDEO_BASE_URL = 'https://SEU_DOMINIO';\nconst videoUrl = `${VIDEO_BASE_URL}/output/${filename}`;\n\nconst montarProps = $('Montar Props').item.json;\n\nreturn [{ json: { videoUrl, caption: montarProps.caption, _rowIndex: montarProps._rowIndex } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 300],
+      "id": "aaaa0006-0000-0000-0000-000000000006",
+      "name": "Preparar URL"
+    },
+    {
+      "parameters": {
+        "resource": "reels",
+        "videoUrl": "={{ $json.videoUrl }}",
+        "caption": "={{ $json.caption }}",
+        "additionalFields": {}
+      },
+      "type": "@mookielianhd/n8n-nodes-instagram.instagram",
+      "typeVersion": 1,
+      "position": [1320, 300],
+      "id": "408a2827-d45f-4132-8bc2-732891010d46",
+      "name": "Publicar Reel",
+      "credentials": {
+        "instagramApi": {
+          "id": "HxrgE32btJ9Bjf1f",
+          "name": "Instagram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "updateRow",
+        "documentId": {
+          "__rl": true,
+          "value": "1FAf0QuK6cTEu13L6syzJsXzx-GQVWleeWoV9-x5Gl8s",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "rowNumber": "={{ $('Preparar URL').item.json._rowIndex }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "usado": "TRUE"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1540, 300],
+      "id": "aaaa0008-0000-0000-0000-000000000008",
+      "name": "Marcar Usado",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SUBSTITUA_PELO_ID_DA_CREDENCIAL",
+          "name": "Google Sheets - Filosofia"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Todo dia às 9h": {
+      "main": [[{ "node": "Buscar Frases", "type": "main", "index": 0 }]]
+    },
+    "Buscar Frases": {
+      "main": [[{ "node": "Sortear Frase", "type": "main", "index": 0 }]]
+    },
+    "Sortear Frase": {
+      "main": [[{ "node": "Montar Props", "type": "main", "index": 0 }]]
+    },
+    "Montar Props": {
+      "main": [[{ "node": "Gerar Vídeo", "type": "main", "index": 0 }]]
+    },
+    "Gerar Vídeo": {
+      "main": [[{ "node": "Preparar URL", "type": "main", "index": 0 }]]
+    },
+    "Preparar URL": {
+      "main": [[{ "node": "Publicar Reel", "type": "main", "index": 0 }]]
+    },
+    "Publicar Reel": {
+      "main": [[{ "node": "Marcar Usado", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "63878755b319aa41c2eb3d9af7d9c294552abc1c71c751b6b28fb81a856b6cea"
+  }
+}
