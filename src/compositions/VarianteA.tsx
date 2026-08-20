@@ -37,14 +37,9 @@ export const VarianteA: React.FC<VideoProps> = ({
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
 
-  // Frase entra com spring (a partir do frame 45)
-  const fraseProgress = spring({
-    frame: frame - TIMING.A_FRASE_IN_START,
-    fps,
-    config: { damping: 18, stiffness: 80, mass: 1 },
-  });
-  const fraseOpacity = interpolate(fraseProgress, [0, 1], [0, 1]);
-  const fraseY = interpolate(fraseProgress, [0, 1], [32, 0]);
+  // Frase visível desde frame 0
+  const fraseOpacity = 1;
+  const fraseY = 0;
 
   // Autor entra com spring (a partir do frame 90)
   const autorProgress = spring({
@@ -55,7 +50,7 @@ export const VarianteA: React.FC<VideoProps> = ({
   const autorOpacity = interpolate(autorProgress, [0, 1], [0, 1]);
   const autorY = interpolate(autorProgress, [0, 1], [20, 0]);
 
-  // Zoom lento durante o hold (frames 0–255)
+  // Zoom lento durante o hold (frames 0–195)
   const zoomScale = interpolate(
     frame,
     [0, TIMING.A_HOLD_END],
@@ -63,7 +58,7 @@ export const VarianteA: React.FC<VideoProps> = ({
     { extrapolateRight: "clamp" }
   );
 
-  // Fade out global (frames 255–300)
+  // Fade out global (frames 195–240)
   const fadeOut = interpolate(
     frame,
     [TIMING.A_HOLD_END, TIMING.A_FADE_OUT_END],
@@ -83,7 +78,7 @@ export const VarianteA: React.FC<VideoProps> = ({
     <AbsoluteFill style={{ background: "#000", fontFamily }}>
       <Audio src={staticFile(musica)} volume={musicVolume} />
 
-      {/* Imagem de fundo com reveal + zoom */}
+      {/* Imagem de fundo com reveal + zoom — some no fade out */}
       <AbsoluteFill
         style={{
           opacity: imagemOpacity * fadeOut,
@@ -96,16 +91,18 @@ export const VarianteA: React.FC<VideoProps> = ({
         />
       </AbsoluteFill>
 
-      {/* Camadas de texto, rodapé e efeitos */}
+      {/* Texto — permanece visível até o fim */}
+      <TextLayer
+        frase={frase}
+        autor={autor}
+        fraseOpacity={fraseOpacity}
+        fraseY={fraseY}
+        autorOpacity={autorOpacity}
+        autorY={autorY}
+      />
+
+      {/* Rodapé e efeitos — somem com o fade out */}
       <AbsoluteFill style={{ opacity: fadeOut }}>
-        <TextLayer
-          frase={frase}
-          autor={autor}
-          fraseOpacity={fraseOpacity}
-          fraseY={fraseY}
-          autorOpacity={autorOpacity}
-          autorY={autorY}
-        />
         <Footer arroba={arroba} avatarSrc={staticFile(avatar)} />
         <Vignette />
         <FilmGrain opacity={0.04} width={width} height={height} />
