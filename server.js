@@ -1,6 +1,6 @@
 import express from "express";
 import { execFile } from "node:child_process";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readdirSync } from "node:fs";
 import { promisify } from "node:util";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
@@ -30,6 +30,22 @@ const VideoPropsSchema = z.object({
   arroba: z.string().min(1),
   avatar: z.string().min(1),
   tema: z.string().optional(),
+});
+
+app.get("/sortear-assets", (_req, res) => {
+  const imagensDir = path.join(__dirname, "assets", "imagens");
+  const musicaDir = path.join(__dirname, "assets", "musica");
+
+  const imagens = readdirSync(imagensDir).filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f));
+  const musicas = readdirSync(musicaDir).filter(f => /\.(mp3|wav|m4a)$/i.test(f));
+
+  if (imagens.length === 0) return res.status(404).json({ status: "erro", mensagem: "Nenhuma imagem em assets/imagens" });
+  if (musicas.length === 0) return res.status(404).json({ status: "erro", mensagem: "Nenhuma música em assets/musica" });
+
+  const imagem = `imagens/${imagens[Math.floor(Math.random() * imagens.length)]}`;
+  const musica = `musica/${musicas[Math.floor(Math.random() * musicas.length)]}`;
+
+  res.json({ imagem, musica });
 });
 
 app.post("/gerar-video", async (req, res) => {

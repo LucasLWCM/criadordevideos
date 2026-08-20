@@ -57,11 +57,23 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json;\nconst variantes = ['A', 'B'];\nconst variante = (item.variante && ['A','B'].includes(item.variante))\n  ? item.variante\n  : variantes[Math.floor(Math.random() * 2)];\n\nconst caption = `\"${item.frase}\"\\n— ${item.autor}\\n\\n#filosofia #estoicismo #sabedoria #autoconhecimento #rafabarbosapsicologia`;\n\nreturn [{\n  json: {\n    props: {\n      frase: item.frase,\n      autor: item.autor,\n      imagem: `imagens/${item.imagem}`,\n      musica: `musica/${item.musica}`,\n      duracao: 8,\n      variante,\n      posicao_frase: 'centro',\n      arroba: 'rafabarbosa.filosofia',\n      avatar: 'avatar.png',\n      tema: item.tema || 'filosofia',\n    },\n    caption,\n    _rowIndex: item._rowIndex,\n  }\n}];"
+        "method": "GET",
+        "url": "http://criadordevideos:3001/sortear-assets",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300],
+      "id": "aaaa0007-0000-0000-0000-000000000007",
+      "name": "Sortear Assets"
+    },
+    {
+      "parameters": {
+        "jsCode": "const frase = $('Sortear Frase').item.json;\nconst assets = $('Sortear Assets').item.json;\nconst variantes = ['A', 'B'];\nconst variante = (frase.variante && ['A','B'].includes(frase.variante))\n  ? frase.variante\n  : variantes[Math.floor(Math.random() * 2)];\n\nconst caption = `\"${frase.frase}\"\\n— ${frase.autor}\\n\\n${frase.caption_extra || 'Comente \"Sementes\" para entrar na nossa comunidade e receber um áudio meu todo dia pela manhã com um pensamento filosófico que te fará voltar a se apaixonar pela vida.'}\\n\\n#filosofia #estoicismo #sabedoria #autoconhecimento #rafabarbosapsicologia`;\n\nreturn [{\n  json: {\n    props: {\n      frase: frase.frase,\n      autor: frase.autor,\n      imagem: assets.imagem,\n      musica: assets.musica,\n      duracao: 8,\n      variante,\n      posicao_frase: 'centro',\n      arroba: 'rafabarbosa.filosofia',\n      avatar: 'avatar.png',\n      tema: frase.tema || 'filosofia',\n    },\n    caption,\n    _rowIndex: frase._rowIndex,\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [660, 300],
+      "position": [880, 300],
       "id": "aaaa0004-0000-0000-0000-000000000004",
       "name": "Montar Props"
     },
@@ -71,24 +83,25 @@
         "url": "http://criadordevideos:3001/gerar-video",
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify($json.props) }}",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.props }}",
         "options": {
           "timeout": 180000
         }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [880, 300],
+      "position": [1100, 300],
       "id": "aaaa0005-0000-0000-0000-000000000005",
       "name": "Gerar Vídeo"
     },
     {
       "parameters": {
-        "jsCode": "const resposta = $input.first().json;\nif (resposta.status !== 'ok') throw new Error('Erro no render: ' + JSON.stringify(resposta));\n\nconst filename = resposta.arquivo.split('/').pop();\n// IMPORTANTE: substitua SEU_DOMINIO pelo domínio do serviço no EasyPanel\nconst VIDEO_BASE_URL = 'https://SEU_DOMINIO';\nconst videoUrl = `${VIDEO_BASE_URL}/output/${filename}`;\n\nconst montarProps = $('Montar Props').item.json;\n\nreturn [{ json: { videoUrl, caption: montarProps.caption, _rowIndex: montarProps._rowIndex } }];"
+        "jsCode": "const resposta = $input.first().json;\nif (resposta.status !== 'ok') throw new Error('Erro no render: ' + JSON.stringify(resposta));\n\nconst filename = resposta.arquivo.split('/').pop();\n// IMPORTANTE: substitua SEU_DOMINIO pelo domínio do serviço criadordevideos no EasyPanel\nconst VIDEO_BASE_URL = 'https://SEU_DOMINIO';\nconst videoUrl = `${VIDEO_BASE_URL}/output/${filename}`;\n\nconst montarProps = $('Montar Props').item.json;\n\nreturn [{ json: { videoUrl, caption: montarProps.caption, _rowIndex: montarProps._rowIndex } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1100, 300],
+      "position": [1320, 300],
       "id": "aaaa0006-0000-0000-0000-000000000006",
       "name": "Preparar URL"
     },
@@ -101,7 +114,7 @@
       },
       "type": "@mookielianhd/n8n-nodes-instagram.instagram",
       "typeVersion": 1,
-      "position": [1320, 300],
+      "position": [1540, 300],
       "id": "408a2827-d45f-4132-8bc2-732891010d46",
       "name": "Publicar Reel",
       "credentials": {
@@ -135,7 +148,7 @@
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1540, 300],
+      "position": [1760, 300],
       "id": "aaaa0008-0000-0000-0000-000000000008",
       "name": "Marcar Usado",
       "credentials": {
@@ -154,6 +167,9 @@
       "main": [[{ "node": "Sortear Frase", "type": "main", "index": 0 }]]
     },
     "Sortear Frase": {
+      "main": [[{ "node": "Sortear Assets", "type": "main", "index": 0 }]]
+    },
+    "Sortear Assets": {
       "main": [[{ "node": "Montar Props", "type": "main", "index": 0 }]]
     },
     "Montar Props": {
