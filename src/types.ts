@@ -1,4 +1,4 @@
-export type Variante = "A" | "B";
+export type Variante = "A" | "B" | "C";
 export type PosicaoFrase = "centro" | "topo";
 
 export interface VideoProps {

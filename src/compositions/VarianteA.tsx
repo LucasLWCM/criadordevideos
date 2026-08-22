@@ -91,6 +91,14 @@ export const VarianteA: React.FC<VideoProps> = ({
         />
       </AbsoluteFill>
 
+      {/* Overlay global — reduz concorrência visual do fundo (acompanha fade da imagem) */}
+      <AbsoluteFill
+        style={{
+          background: "rgba(0,0,0,0.23)",
+          opacity: imagemOpacity * fadeOut,
+        }}
+      />
+
       {/* Texto — permanece visível até o fim */}
       <TextLayer
         frase={frase}

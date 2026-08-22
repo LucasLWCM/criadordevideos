@@ -1,13 +1,24 @@
 import React from "react";
 
-// Font size dinâmico — frases curtas → fonte maior, longas → menor
+// Estima número de linhas para um dado fontSize e retorna o tamanho ideal
 function calcFontSize(frase: string): number {
-  const len = frase.length;
-  if (len <= 60) return 45;
-  if (len <= 100) return 41;
-  if (len <= 150) return 37;
-  if (len <= 200) return 33;
-  return Math.max(28, 33 - Math.floor((len - 200) / 20));
+  const blockWidth = 820; // 1080 - 2*130px de margem
+  const charWidthRatio = 0.52; // estimativa para serif elegante
+
+  const tiers = [
+    { maxLines: 2, size: 66 },
+    { maxLines: 3, size: 60 },
+    { maxLines: 4, size: 54 },
+    { maxLines: 5, size: 48 },
+    { maxLines: 6, size: 44 },
+  ];
+
+  for (const { maxLines, size } of tiers) {
+    const charsPerLine = Math.floor(blockWidth / (size * charWidthRatio));
+    if (Math.ceil(frase.length / charsPerLine) <= maxLines) return size;
+  }
+
+  return 40;
 }
 
 interface TextLayerProps {
@@ -28,66 +39,72 @@ export const TextLayer: React.FC<TextLayerProps> = ({
   autorY,
 }) => {
   const fontSize = calcFontSize(frase);
-  const autorFontSize = Math.round(fontSize * 0.80);
+  const autorFontSize = Math.round(fontSize * 0.60);
 
   return (
-    <>
-      {/* Citação — centro fixo em Y=565px (29,5% de 1920) */}
+    <div
+      style={{
+        position: "absolute",
+        left: 130,
+        right: 130,
+        top: 510,
+        transform: `translateY(calc(-50% + ${fraseY}px))`,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        zIndex: 20,
+      }}
+    >
+      {/* Overlay localizado atrás do bloco — halo escuro suave para contraste */}
       <div
         style={{
           position: "absolute",
-          left: 170,
-          right: 170,
-          top: 565,
-          transform: `translateY(calc(-50% + ${fraseY}px))`,
-          zIndex: 20,
+          inset: "-70px -90px",
+          background:
+            "radial-gradient(ellipse 90% 80% at 50% 45%, rgba(0,0,0,0.18) 0%, transparent 100%)",
+          zIndex: -1,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Citação */}
+      <p
+        style={{
+          color: "#F4F1EA",
+          fontSize,
+          fontFamily: "inherit",
+          fontWeight: 400,
+          textAlign: "center",
+          lineHeight: 1.08,
+          letterSpacing: "-0.01em",
+          textShadow:
+            "0 2px 8px rgba(0,0,0,0.70), 0 8px 32px rgba(0,0,0,0.50)",
+          margin: 0,
           opacity: fraseOpacity,
         }}
       >
-        <p
-          style={{
-            color: "#fff",
-            fontSize,
-            fontFamily: "inherit",
-            fontWeight: 400,
-            textAlign: "center",
-            lineHeight: 1.2,
-            textShadow: "0 4px 24px rgba(0,0,0,0.9)",
-            margin: 0,
-          }}
-        >
-          {frase}
-        </p>
-      </div>
+        {frase}
+      </p>
 
-      {/* Autor — centro fixo em Y=740px (38,5% de 1920) */}
-      <div
+      {/* Autor — mesma família tipográfica, escala menor, elegante */}
+      <p
         style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 740,
-          transform: `translateY(calc(-50% + ${autorY}px))`,
-          zIndex: 20,
+          color: "rgba(244,241,234,0.68)",
+          fontSize: autorFontSize,
+          fontFamily: "inherit",
+          fontWeight: 300,
+          textAlign: "center",
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          textShadow: "0 2px 12px rgba(0,0,0,0.85)",
+          margin: 0,
+          marginTop: 44,
           opacity: autorOpacity,
+          transform: `translateY(${autorY}px)`,
         }}
       >
-        <p
-          style={{
-            color: "rgba(255,255,255,0.70)",
-            fontSize: autorFontSize,
-            fontFamily: "inherit",
-            fontWeight: 300,
-            textAlign: "center",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            textShadow: "0 2px 12px rgba(0,0,0,0.9)",
-            margin: 0,
-          }}
-        >
-          — {autor}
-        </p>
-      </div>
-    </>
+        — {autor}
+      </p>
+    </div>
   );
 };

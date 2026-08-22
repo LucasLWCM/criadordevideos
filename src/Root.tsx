@@ -2,6 +2,7 @@ import React from "react";
 import { Composition } from "remotion";
 import { VarianteA } from "./compositions/VarianteA";
 import { VarianteB } from "./compositions/VarianteB";
+import { VarianteC } from "./compositions/VarianteC";
 import { VideoProps } from "./types";
 import { TIMING } from "./lib/timing";
 import "./lib/fonts"; // garante que loadFont() é chamado no bundle
@@ -34,6 +35,15 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="VarianteB"
         component={VarianteB}
+        durationInFrames={TIMING.TOTAL_FRAMES}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={DEFAULT_PROPS}
+      />
+      <Composition
+        id="VarianteC"
+        component={VarianteC}
         durationInFrames={TIMING.TOTAL_FRAMES}
         fps={30}
         width={1080}
