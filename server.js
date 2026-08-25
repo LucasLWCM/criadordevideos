@@ -25,7 +25,7 @@ const VideoPropsSchema = z.object({
   imagem: z.string().min(1),
   musica: z.string().min(1),
   duracao: z.number().default(10),
-  variante: z.enum(["A", "B"]),
+  variante: z.enum(["A", "B", "C"]),
   posicao_frase: z.enum(["centro", "topo"]),
   arroba: z.string().min(1),
   avatar: z.string().min(1),
@@ -58,7 +58,7 @@ app.post("/gerar-video", async (req, res) => {
   }
 
   const props = parsed.data;
-  const compositionId = props.variante === "A" ? "VarianteA" : "VarianteB";
+  const compositionId = `Variante${props.variante}`;
   const outputFilename = `${uuidv4()}.mp4`;
   const outputPath = path.join(__dirname, "output", outputFilename);
   const entryPoint = path.join(__dirname, "src", "index.ts");
