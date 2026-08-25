@@ -77,14 +77,8 @@ export const VarianteC: React.FC<VideoProps> = ({
   // Micro jitter
   const { x: jX, y: jY, rot: jRot } = calcMicroJitter(frame);
 
-  // Blur "respirando" — oscila levemente
-  const blurAmount = 1.8 + Math.sin((frame / 30) * 0.61) * 0.5;
-
-  // Wave displacement — scale oscila para efeito de onda contínua
-  const waveScale = 7 + Math.sin((frame / 30) * 0.38) * 3;
-
-  // Aberração cromática — amplitude oscilante sutil
-  const caAmplitude = 2.0 + Math.sin((frame / 30) * 1.13) * 0.8 + Math.sin((frame / 30) * 2.31) * 0.3;
+  // Blur CSS — oscila levemente (GPU-accelerated, sem SVG filter)
+  const blurAmount = (1.8 + Math.sin((frame / 30) * 0.61) * 0.5).toFixed(2);
 
   // Fade out global
   const fadeOut = interpolate(
@@ -117,64 +111,7 @@ export const VarianteC: React.FC<VideoProps> = ({
     <AbsoluteFill style={{ background: "#000", fontFamily }}>
       <Audio src={staticFile(musica)} volume={musicVolume} />
 
-      {/*
-        SVG filter combinado: wave displacement + gaussian blur + chromatic aberration.
-        Aplicado à imagem em sequência: onda → blur → split RGB com offset.
-      */}
-      <svg style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
-        <defs>
-          <filter id="vc-combined" x="-5%" y="-5%" width="110%" height="110%">
-            {/* 1. Wave distortion com turbulência suave */}
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.008 0.006"
-              numOctaves="2"
-              seed={42}
-              result="noise"
-            />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale={waveScale}
-              xChannelSelector="R"
-              yChannelSelector="G"
-              result="waved"
-            />
-
-            {/* 2. Blur atmosférico sobre resultado da onda */}
-            <feGaussianBlur in="waved" stdDeviation={blurAmount} result="blurred" />
-
-            {/* 3. Chromatic aberration — split R/G/B com offset horizontal */}
-            <feColorMatrix
-              in="blurred"
-              type="matrix"
-              values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
-              result="r_ch"
-            />
-            <feOffset in="r_ch" dx={caAmplitude} dy={0} result="r_shifted" />
-
-            <feColorMatrix
-              in="blurred"
-              type="matrix"
-              values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
-              result="g_ch"
-            />
-
-            <feColorMatrix
-              in="blurred"
-              type="matrix"
-              values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
-              result="b_ch"
-            />
-            <feOffset in="b_ch" dx={-caAmplitude} dy={0} result="b_shifted" />
-
-            <feBlend in="r_shifted" in2="g_ch" mode="screen" result="rg" />
-            <feBlend in="rg" in2="b_shifted" mode="screen" />
-          </filter>
-        </defs>
-      </svg>
-
-      {/* Imagem com todos os efeitos: drift + jitter + zoom + filtro combinado */}
+      {/* Imagem: drift + jitter + zoom + blur CSS (GPU-accelerated) */}
       <AbsoluteFill
         style={{
           opacity: fadeOut,
@@ -185,7 +122,7 @@ export const VarianteC: React.FC<VideoProps> = ({
           style={{
             width: "100%",
             height: "100%",
-            filter: "url(#vc-combined)",
+            filter: `blur(${blurAmount}px)`,
           }}
         >
           <Img
