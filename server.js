@@ -32,6 +32,17 @@ const VideoPropsSchema = z.object({
   tema: z.string().optional(),
 });
 
+app.get("/listar-videos", (_req, res) => {
+  const outputDir = path.join(__dirname, "output");
+  const arquivos = readdirSync(outputDir)
+    .filter(f => f.endsWith(".mp4"))
+    .map(f => ({
+      arquivo: f,
+      url: `/output/${f}`,
+    }));
+  res.json({ total: arquivos.length, videos: arquivos });
+});
+
 app.get("/sortear-assets", (_req, res) => {
   const imagensDir = path.join(__dirname, "assets", "imagens");
   const musicaDir = path.join(__dirname, "assets", "musica");
