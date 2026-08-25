@@ -87,7 +87,7 @@ app.post("/gerar-video", async (req, res) => {
         ],
         {
           cwd: __dirname,
-          timeout: 5 * 60 * 1000,
+          timeout: 15 * 60 * 1000,
           maxBuffer: 50 * 1024 * 1024,
         }
       );

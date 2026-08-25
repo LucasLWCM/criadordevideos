@@ -21,7 +21,11 @@ export const FilmGrain: React.FC<FilmGrainProps> = ({
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
-    const imageData = ctx.createImageData(width, height);
+    const W = Math.floor(width / 4);
+    const H = Math.floor(height / 4);
+    canvas.width = W;
+    canvas.height = H;
+    const imageData = ctx.createImageData(W, H);
     const data = imageData.data;
     let seed = frame * 9301 + 49297;
     for (let i = 0; i < data.length; i += 4) {
@@ -43,6 +47,9 @@ export const FilmGrain: React.FC<FilmGrainProps> = ({
       style={{
         position: "absolute",
         inset: 0,
+        width: "100%",
+        height: "100%",
+        imageRendering: "pixelated",
         opacity,
         mixBlendMode: "overlay",
         pointerEvents: "none",
