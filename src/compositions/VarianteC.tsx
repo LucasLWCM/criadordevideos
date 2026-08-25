@@ -17,9 +17,8 @@ import { Vignette } from "../components/Vignette";
 import { FilmGrain } from "../components/FilmGrain";
 
 function calcFontSizeC(frase: string): number {
-  const blockWidth = 860; // 1080 - 2*110px
+  const blockWidth = 860;
   const charWidthRatio = 0.52;
-
   const tiers = [
     { maxLines: 2, size: 69 },
     { maxLines: 3, size: 63 },
@@ -27,30 +26,11 @@ function calcFontSizeC(frase: string): number {
     { maxLines: 5, size: 51 },
     { maxLines: 6, size: 46 },
   ];
-
   for (const { maxLines, size } of tiers) {
     const charsPerLine = Math.floor(blockWidth / (size * charWidthRatio));
     if (Math.ceil(frase.length / charsPerLine) <= maxLines) return size;
   }
-
   return 42;
-}
-
-// Micro jitter orgânico — amplitude muito menor que Variante B
-function calcMicroJitter(frame: number): { x: number; y: number; rot: number } {
-  const t = frame / 30;
-  const x =
-    Math.sin(t * 1.31 + 0.7) * 2.5 +
-    Math.sin(t * 3.17 + 2.1) * 1.2 +
-    Math.sin(t * 7.43 + 1.4) * 0.5;
-  const y =
-    Math.sin(t * 0.97 + 1.2) * 2.0 +
-    Math.sin(t * 2.53 + 0.5) * 1.0 +
-    Math.sin(t * 5.91 + 2.7) * 0.4;
-  const rot =
-    Math.sin(t * 0.73 + 1.1) * 0.08 +
-    Math.sin(t * 1.97 + 0.3) * 0.04;
-  return { x, y, rot };
 }
 
 export const VarianteC: React.FC<VideoProps> = ({
@@ -64,21 +44,15 @@ export const VarianteC: React.FC<VideoProps> = ({
   const frame = useCurrentFrame();
   const { width, height, fps } = useVideoConfig();
 
-  // Vertical drift — imagem sobe lentamente ao longo de todo o vídeo
-  const driftY = interpolate(frame, [0, TIMING.TOTAL_FRAMES], [0, -32], {
+  // Zoom lento
+  const zoomScale = interpolate(frame, [0, TIMING.A_HOLD_END], [1.0, 1.06], {
     extrapolateRight: "clamp",
   });
 
-  // Zoom suave
-  const zoomScale = interpolate(frame, [0, TIMING.A_HOLD_END], [1.0, 1.05], {
+  // Drift vertical suave
+  const driftY = interpolate(frame, [0, TIMING.TOTAL_FRAMES], [0, -28], {
     extrapolateRight: "clamp",
   });
-
-  // Micro jitter
-  const { x: jX, y: jY, rot: jRot } = calcMicroJitter(frame);
-
-  // Blur CSS — oscila levemente (GPU-accelerated, sem SVG filter)
-  const blurAmount = (1.8 + Math.sin((frame / 30) * 0.61) * 0.5).toFixed(2);
 
   // Fade out global
   const fadeOut = interpolate(
@@ -95,14 +69,22 @@ export const VarianteC: React.FC<VideoProps> = ({
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
 
-  // Autor entra com spring suave
+  // Frase entra com scale (diferencia de A e B)
+  const fraseProgress = spring({
+    frame: frame - TIMING.A_FRASE_IN_START,
+    fps,
+    config: { damping: 22, stiffness: 60, mass: 1 },
+  });
+  const fraseOpacity = interpolate(fraseProgress, [0, 1], [0, 1]);
+  const fraseScale = interpolate(fraseProgress, [0, 1], [0.92, 1]);
+
+  // Autor entra depois da frase
   const autorProgress = spring({
-    frame: frame - 60,
+    frame: frame - TIMING.A_AUTOR_IN_START,
     fps,
     config: { damping: 20, stiffness: 70, mass: 1 },
   });
   const autorOpacity = interpolate(autorProgress, [0, 1], [0, 1]);
-  const autorY = interpolate(autorProgress, [0, 1], [16, 0]);
 
   const fontSize = calcFontSizeC(frase);
   const autorFontSize = Math.round(fontSize * 0.57);
@@ -111,38 +93,29 @@ export const VarianteC: React.FC<VideoProps> = ({
     <AbsoluteFill style={{ background: "#000", fontFamily }}>
       <Audio src={staticFile(musica)} volume={musicVolume} />
 
-      {/* Imagem: drift + jitter + zoom + blur CSS (GPU-accelerated) */}
+      {/* Imagem: zoom + drift vertical */}
       <AbsoluteFill
         style={{
           opacity: fadeOut,
-          transform: `scale(${zoomScale}) translate(${jX}px, ${jY + driftY}px) rotate(${jRot}deg)`,
+          transform: `scale(${zoomScale}) translateY(${driftY}px)`,
         }}
       >
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            filter: `blur(${blurAmount}px)`,
-          }}
-        >
-          <Img
-            src={staticFile(imagem)}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        </div>
+        <Img
+          src={staticFile(imagem)}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
       </AbsoluteFill>
 
-      {/* Overlay global — 25% preto suave acompanha fade da imagem */}
+      {/* Tint quente — diferencia visualmente de A e B */}
       <AbsoluteFill
         style={{
-          background: "rgba(0,0,0,0.25)",
+          background: "rgba(40, 18, 0, 0.32)",
           opacity: fadeOut,
         }}
       />
 
-      {/* Texto e UI — completamente estáticos, sem influência do movimento do fundo */}
+      {/* Texto */}
       <AbsoluteFill style={{ opacity: fadeOut }}>
-        {/* Bloco de texto centralizado em 40% da altura (768px de 1920) */}
         <div
           style={{
             position: "absolute",
@@ -156,40 +129,27 @@ export const VarianteC: React.FC<VideoProps> = ({
             zIndex: 20,
           }}
         >
-          {/* Overlay localizado atrás do bloco — halo escuro suave */}
-          <div
-            style={{
-              position: "absolute",
-              inset: "-80px -100px",
-              background:
-                "radial-gradient(ellipse 88% 82% at 50% 46%, rgba(0,0,0,0.16) 0%, transparent 100%)",
-              zIndex: -1,
-              pointerEvents: "none",
-            }}
-          />
-
-          {/* Citação */}
           <p
             style={{
-              color: "#F5F3EE",
+              color: "#F5F0E8",
               fontSize,
               fontFamily: "inherit",
               fontWeight: 400,
               textAlign: "center",
               lineHeight: 1.08,
               letterSpacing: "-0.01em",
-              textShadow:
-                "0 2px 10px rgba(0,0,0,0.75), 0 10px 40px rgba(0,0,0,0.55)",
+              textShadow: "0 2px 10px rgba(0,0,0,0.75), 0 10px 40px rgba(0,0,0,0.55)",
               margin: 0,
+              opacity: fraseOpacity,
+              transform: `scale(${fraseScale})`,
             }}
           >
             {frase}
           </p>
 
-          {/* Autor — mesma fonte herdada do sistema, escala menor */}
           <p
             style={{
-              color: "rgba(245,243,238,0.65)",
+              color: "rgba(245,240,232,0.65)",
               fontSize: autorFontSize,
               fontFamily: "inherit",
               fontWeight: 300,
@@ -200,7 +160,6 @@ export const VarianteC: React.FC<VideoProps> = ({
               margin: 0,
               marginTop: 44,
               opacity: autorOpacity,
-              transform: `translateY(${autorY}px)`,
             }}
           >
             — {autor}
