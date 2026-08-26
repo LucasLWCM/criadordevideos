@@ -4,7 +4,6 @@ import {
   Audio,
   Img,
   interpolate,
-  spring,
   useCurrentFrame,
   useVideoConfig,
   staticFile,
@@ -42,7 +41,7 @@ export const VarianteC: React.FC<VideoProps> = ({
   avatar,
 }) => {
   const frame = useCurrentFrame();
-  const { width, height, fps } = useVideoConfig();
+  const { width, height } = useVideoConfig();
 
   // Zoom lento
   const zoomScale = interpolate(frame, [0, TIMING.A_HOLD_END], [1.0, 1.06], {
@@ -69,22 +68,9 @@ export const VarianteC: React.FC<VideoProps> = ({
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
 
-  // Frase entra com scale (diferencia de A e B)
-  const fraseProgress = spring({
-    frame: frame - TIMING.A_FRASE_IN_START,
-    fps,
-    config: { damping: 22, stiffness: 60, mass: 1 },
-  });
-  const fraseOpacity = interpolate(fraseProgress, [0, 1], [0, 1]);
-  const fraseScale = interpolate(fraseProgress, [0, 1], [0.92, 1]);
-
-  // Autor entra depois da frase
-  const autorProgress = spring({
-    frame: frame - TIMING.A_AUTOR_IN_START,
-    fps,
-    config: { damping: 20, stiffness: 70, mass: 1 },
-  });
-  const autorOpacity = interpolate(autorProgress, [0, 1], [0, 1]);
+  const fraseOpacity = 1;
+  const fraseScale = 1;
+  const autorOpacity = 1;
 
   const fontSize = calcFontSizeC(frase);
   const autorFontSize = Math.round(fontSize * 0.57);
